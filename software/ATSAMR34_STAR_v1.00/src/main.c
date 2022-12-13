@@ -46,7 +46,16 @@
 #include "sw_timer.h"
 #if (BOARD == SAMR34_XPLAINED_PRO)
 #include "edbg-eui.h"
-#endif
+#endif 
+//PUEDE HABER REDES CON UN CRA, VARIOS MONITORES Y UN PAN COORDINATOR
+//PUEDE HABER REDES CON UN MONITOR Y UN PAN COORDINATOR
+//PUEDE HABER REDES CON UN CRA Y VARIOS ALIMENTADORES
+//definir pan coordinators
+//#define CRA //SOLO PUEDE HABER UNO
+//#define MONITOR //PUEDE HABER VARIOS
+//definir end nodes
+//#define ALIMENTADOR //PUEDE HABER VARIOS
+
 
 /************************** DEFINITIONS **********************************/
 
@@ -54,8 +63,7 @@
 void ReadMacAddress(void);
 SYSTEM_TaskStatus_t APP_TaskHandler(void);
 
-int main ( void )
-{   
+int main ( void ){   
     bool freezer_enable = false;
 	irq_initialize_vectors();
 	

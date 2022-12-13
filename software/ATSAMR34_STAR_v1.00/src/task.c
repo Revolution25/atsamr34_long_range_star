@@ -323,15 +323,18 @@ bool Initialize_Demo(bool freezer_enable)
 
         MiApp_ProtocolInit(NULL, NULL);
 		
-		// Read and display RF configuration
-		uint8_t txPower = 0x1F ;
-		RADIO_GetAttr(OUTPUT_POWER, (void *)&txPower) ;
-		uint8_t paBoost = 255 ;
-		RADIO_GetAttr(PABOOST, (void *)&paBoost) ;
-		RadioDataRate_t sf = 33 ;
-		PHY_GetAttribute(SPREADING_FACTOR, (void *)&sf) ;
-		RadioLoRaBandWidth_t bw ;
-		PHY_GetAttribute(BANDWIDTH, (void *)&bw) ;
+		// Set and display RF configuration
+		uint8_t txPower = 20;
+		RadioDataRate_t sf = SF_9;								//Asigno un valor a sf, cuanto mas alto es este valor mas lenta es la comunicacion pero la señal es mas resistente al ruido ambiente y por lo tanto se logra una mayor distancia de transmision
+		RadioLoRaBandWidth_t bw = BW_125KHZ;					//Asigno un valor a bw
+		uint8_t paBoost = 0;
+		PHY_SetTxPower(txPower);								//Configuro un nuevo valor a txPower en el radio
+		RADIO_GetAttr(OUTPUT_POWER, (void *)&txPower);			//Obtengo el valor de txPower
+		RADIO_GetAttr(PABOOST, (void *)&paBoost);
+		PHY_SetAttribute(SPREADING_FACTOR, (void *)&sf);		//Configuro el nuevo valor de sf en el radio
+		PHY_GetAttribute(SPREADING_FACTOR, (void *)&sf);		//Obtengo el valor establecido
+		PHY_SetAttribute(BANDWIDTH, (void *)&bw);				//Configuro el nuevo valor de bw en el radio
+		PHY_GetAttribute(BANDWIDTH, (void *)&bw);				//Obtengo el valor establecdo
 		printf("\r\n-----------------------------------------------------\r\n") ;
 		printf("RF Parameters\r\n") ;
 		printf(" - Tx output power: %d\r\n", txPower) ;
@@ -430,7 +433,7 @@ bool Initialize_Demo(bool freezer_enable)
 #endif // #ifdef ENABLE_ED_SCAN	
 
 #ifdef ENABLE_ACTIVE_SCAN		
-		MiApp_SearchConnection(3, 0xFFFFFFFF, Scan_Confirm);
+		MiApp_SearchConnection(5, 0xFFFFFFFF, Scan_Confirm);
 #endif // #ifdef ENABLE_ACTIVE_SCAN
 
         /*******************************************************************/

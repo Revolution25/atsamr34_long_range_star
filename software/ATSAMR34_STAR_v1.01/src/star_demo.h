@@ -34,6 +34,7 @@
 #ifndef STAR_DEMO_H
 #define	STAR_DEMO_H
 
+
 /*********************************************************************
 * Function: void ReceivedDataIndication (RECEIVED_MESSAGE *ind)
 *
@@ -103,3 +104,5 @@ void dutyCyclingCallback(void) ;
 
 #endif	/* STAR_DEMO_H */
 
+uint8_t calculate_checksum(const uint8_t *ptrMensaje, const uint16_t tamanio);
+void messi (void);

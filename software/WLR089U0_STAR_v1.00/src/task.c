@@ -37,6 +37,7 @@
 #include "star_demo.h"
 #include "asf.h"
 
+
 #if defined(ENABLE_SLEEP_FEATURE)
 #include "sleep_mgr.h"
 #endif
@@ -45,6 +46,7 @@
 /************************** VARIABLES ************************************/
 #define LIGHT   0x01
 #define SWITCH  0x02
+
 
 // Software Timer used for Tx timeout
 uint8_t TxTimerId = 0;
@@ -304,8 +306,8 @@ bool Initialize_Demo(bool freezer_enable)
 		DemoOutput_Instruction();
 #else
 		
-		if(END_DEVICE == role)
-			startLinkStatusTimer();
+		//if(END_DEVICE == role)
+			//startLinkStatusTimer();
 
 		STAR_DEMO_OPTIONS_MESSAGE (role);
 #endif
@@ -542,5 +544,6 @@ bool Initialize_Demo(bool freezer_enable)
 void Run_Demo(void)
 {
     P2PTasks();
-    run_star_demo();   
+    run_star_demo(); 
+	
 }

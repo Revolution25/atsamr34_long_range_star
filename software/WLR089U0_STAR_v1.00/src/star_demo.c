@@ -642,10 +642,10 @@ void ReceivedDataIndication (RECEIVED_MESSAGE *ind)
 
 	    /* Display the Source End Device Info on reception msg, Do not display if it is
        a PAN CO or if the message received was a broadcast packet */
-    if ((role == END_DEVICE) && !rxMessage.flags.bits.broadcast)
-    {
-        Source_END_DEVICE_INFO(rxMessage.Payload);
-    }
+    //if ((role == END_DEVICE) && !rxMessage.flags.bits.broadcast)
+    //{
+        //Source_END_DEVICE_INFO(rxMessage.Payload);
+    //}
     /* Display the Instructions message */
     STAR_DEMO_OPTIONS_MESSAGE (role);
 #endif

@@ -480,29 +480,29 @@ void P2PTasks(void)
 	sw_timeout_variable = calculate_ToA(CALC_SEC_PAYLOAD_SIZE(PACKETLEN_CMD_DATA_TO_ENDDEV_SUCCESS));
 	sw_timeout_variable = (sw_timeout_variable + FORWARD_PACKET_PROCESSING_DELAY)*1000;
 	
-	if(role == END_DEVICE)
-	{
-		if((SwAckReq))
-		{
-			for(i = 0; i < FORWARD_PACKET_BANK_SIZE; i++)
-			{
-				if( forwardMessages[i].fromEDToED)
-				{
-					tmpTick.Val = MiWi_TickGet();
-					if( (MiWi_TickGetDiff(tmpTick, forwardMessages[i].TickStart)) > ((sw_timeout_variable) * SW_ACK_TIMEOUT))
-					{
-						forwardMessages[i].fromEDToED = 0;
-						SwAckReq = false;
-						//printf("SwAck:%d Ack:%d\n\r",SwAckReq,AckReqData);
-						#if defined(ENABLE_DEBUG_LOG)
-						printf("\r\nForward message SW ACK Timeout\n\r");
-						#endif
-						forwardMessages[i].confCallback(forwardMessages[i].msghandle, NO_ACK, NULL);
-					}
-				}
-			}
-		}
-	}
+	//if(role == END_DEVICE)
+	//{
+		//if((SwAckReq))
+		//{
+			//for(i = 0; i < FORWARD_PACKET_BANK_SIZE; i++)
+			//{
+				//if( forwardMessages[i].fromEDToED)
+				//{
+					//tmpTick.Val = MiWi_TickGet();
+					//if( (MiWi_TickGetDiff(tmpTick, forwardMessages[i].TickStart)) > ((sw_timeout_variable) * SW_ACK_TIMEOUT))
+					//{
+						//forwardMessages[i].fromEDToED = 0;
+						//SwAckReq = false;
+						////printf("SwAck:%d Ack:%d\n\r",SwAckReq,AckReqData);
+						//#if defined(ENABLE_DEBUG_LOG)
+						//printf("\r\nForward message SW ACK Timeout\n\r");
+						//#endif
+						//forwardMessages[i].confCallback(forwardMessages[i].msghandle, NO_ACK, NULL);
+					//}
+				//}
+			//}
+		//}
+	//}
 #endif
 /************************************************************************************/
 
@@ -877,7 +877,7 @@ void P2PTasks(void)
 									  if ((status == STATUS_SUCCESS) || (status == STATUS_EXISTS))
 									  {
 											/* Role is end node */
-											 role = END_DEVICE;
+											 //role = END_DEVICE;
 											 #if defined(ENABLE_DEBUG_LOG)
 											 printf("\n\rSetting the Role to %d\n\r",role);
 											 #endif

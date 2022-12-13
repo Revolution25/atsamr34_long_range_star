@@ -38,6 +38,13 @@
 #include "star_demo.h"
 #include "mimem.h"
 #include "asf.h"
+#define IN_CONTENIDO		14
+#define BYTES_DESECHABLES	11
+#define	MAX_BYTES_MS		267
+bool		send_msj = 0;
+int			msj_init = 0;
+uint8_t		c_faltantes = 0, MAC[8] = {0X00},MACPCOOR[8]= {0X00}, mensaje[267] = {0X00}, contenido[255] = {0X00}, checksum = 0;
+uint16_t	ic = 0, cont_char = 0, longitud_msj = 0;
 #if defined(ENABLE_SLEEP_FEATURE)
 #include "sleep_mgr.h"
 #endif
@@ -49,7 +56,8 @@
 #include "sw_timer.h"
 
 #if defined(PROTOCOL_P2P) || defined(PROTOCOL_STAR)
-
+uint16_t COMPARACION;
+uint8_t n;
 uint8_t i;
 uint8_t TxNum = 0;
 uint8_t RxNum = 0;
@@ -277,6 +285,208 @@ void run_star_demo(void)
 		/*******************************************************************/
 		
 		/* Read the button */
+		if(mensaje[0] == 0X00) {										//Mientras que mensaje[0] sea diferente de 0X7E intento cachar el inicio de un mensaje
+			cont_char = sio2host_rx(mensaje, IN_CONTENIDO);
+		} else if(mensaje[0] == 0X7E) {								//Pero si mensaje[0] es igual a 0X7E entonces entro a esperar el resto de caracteres
+			if(cont_char < 2) {											//Si aun no se recibio los byte del largo del mensaje los espera
+				mensaje[1] = sio2host_getchar(); //estos indican el largo del mensaje
+				mensaje[2] = sio2host_getchar();
+				cont_char = cont_char + 2;
+				} else if(cont_char < 3) {
+				mensaje[2] = sio2host_getchar();//sio2host  espera un caracter
+				cont_char++;
+			}
+			longitud_msj = mensaje[1];
+			longitud_msj = (longitud_msj << 8) | mensaje[2];
+			c_faltantes = longitud_msj - (cont_char - 3);				//Usando cont_char obtengo el numero de caracteres que me falta por recibir
+			for(ic = 0; ic < (c_faltantes + 1); ic++) {						//Espero a que lleguen al puerto serie el total de caracteres faltantes
+				mensaje[cont_char + ic] = sio2host_getchar();
+			}
+			checksum = calculate_checksum(mensaje, longitud_msj);
+			#if defined (ENABLE_CONSOLE)
+			for(ic = 0; ic < (longitud_msj + 3 + 1); ic++) {				//Imprimo los caracteres que llegaron
+				printf("%02X", mensaje[ic]);
+			}
+			printf(" Datos cachados por interupcion: %03d, Datos del mensaje: %03d, ", cont_char, (longitud_msj - BYTES_DESECHABLES + 1));
+			printf("checksum calculado: %02X, checksum en msj: %02X\r\n", checksum, (mensaje[longitud_msj + 3]));
+			#endif //(ENABLE_CONSOLE)
+			cont_char = 0;
+			if (mensaje[longitud_msj + 3] == checksum) {
+				send_msj = 1;
+				} else {
+				send_msj = 0;
+				cont_char = 0;
+				for(ic = 0; ic < MAX_BYTES_MS; ic++) mensaje[ic] = NULL;
+			}
+			
+		if(send_msj == 1) {
+				MAC[7] = mensaje[5];
+				MAC[6] = mensaje[6];
+				MAC[5] = mensaje[7];
+				MAC[4] = mensaje[8];
+				MAC[3] = mensaje[9];
+				MAC[2] = mensaje[10];
+				MAC[1] = mensaje[11];
+				MAC[0] = mensaje[12];
+				
+							/*******************************************************************/
+					// Button 2 pressed - prepare a unicast message
+					/*******************************************************************/
+					chk_sel_status = true;
+					select_ed = 0;
+					update_ed = true;
+					while(update_ed == true)
+					{
+						chk_sel_status = true;
+
+						while(chk_sel_status)
+						{
+											
+							// While waiting in TX , RX will process if any message was available
+							
+ 							   uint8_t* dataPtr = NULL;
+								uint8_t dataLen = 0;
+								update_ed = false;
+								chk_sel_status = false;
+                                for(i = 0; i < (longitud_msj - BYTES_DESECHABLES + 1); i++) 
+								{
+									// Fill TX buffer User DATA
+									contenido[i] = mensaje[IN_CONTENIDO + i];	
+								}
+#if defined(ENABLE_SLEEP_FEATURE)
+								send_data = 1;
+#endif // #if defined(ENABLE_SLEEP_FEATURE)
+
+#ifdef DUTY_CYCLING
+								appDataPhyLen = dataLen ;
+#endif // #ifdef DUTY_CYCLING
+
+#if defined(PROTOCOL_STAR)
+										//for(i = 0; i < MY_ADDRESS_LENGTH; i++)
+										//{
+											//printf("%02x",myLongAddress[MY_ADDRESS_LENGTH-1-i]);
+										//}
+										//for(i = 0; i < 8; i++)
+			//{
+				//ConnectionTable[connectionSlot].Address[i] = rxMessage.SourceAddress[i];
+				//#if defined(ENABLE_DEBUG_LOG)
+				//printf("%02X",rxMessage.SourceAddress[i]);
+				//#endif
+			//}
+			
+			for(i = 0; i < 8; i++)
+			{
+			MACPCOOR[i]=ConnectionTable[0].Address[i] ;
+			}
+			for(i = 0; i < 8; i++)
+			{
+			COMPARACION=MACPCOOR[i]-MAC[i] ;
+			if (COMPARACION!=0){
+				break;
+			}
+			}
+			            if (COMPARACION == 0)
+					                    {
+					                        /* IF on the demo , a END_Device displays its own Connection Detail
+					                           unicast data packet to just PAN COR , No forwarding */
+					                         if (MiApp_SendData(LONG_ADDR_LEN, ConnectionTable[0].Address, (longitud_msj - BYTES_DESECHABLES + 1), contenido, ++msghandledemo, true, dataConfcb)== false)
+											 {
+							#if defined(ENABLE_SLEEP_FEATURE)
+												 PHY_DataConf(FAILURE);
+							#endif // #if defined(ENABLE_SLEEP_FEATURE)
+												 --msghandledemo;
+							                     printf("\nPrevious Transaction is ongoing\n\r");
+												 //DemoOutput_UnicastFail();
+											 }
+											 else
+											 {
+												 for(ic = 0; ic < MAX_BYTES_MS; ic++) mensaje[ic] = NULL;
+												send_msj = 0;
+											 	// Successful Transmission
+											 	TxNum++;
+											 	/* Start timer for transmission timeout */
+											 	//SwTimerStart (TxTimerId, MS_TO_US(5000), 0/*SW_TIMEOUT_RELATIVE*/, (void *)TxToutCallback, NULL);
+											 }
+											
+
+					                    }
+						             else
+											for (n=0;n<20;n++){
+											if (COMPARACION==0 && i==3){
+											break;
+											}
+										 for(i = 0; i < 3; i++)
+			{	
+				COMPARACION=END_DEVICES_Short_Address[n].Address[i]-MAC[i] ;		
+				
+			}
+										 }
+										 n=n-1;
+						                 /* Data can be sent at a time from one END_DEVICE_TO_ANOTHER
+						                    Edx --> Pan CO --> EDy
+						                    To forward a Packet from one ED to another ED , address should be specified with length as 3
+						                    and address as end dest device short address (3 bytes)
+						                 */
+										 
+						                 if(MiApp_SendData(3, END_DEVICES_Short_Address[n].Address,(longitud_msj - BYTES_DESECHABLES + 1), contenido, ++msghandledemo, true, dataConfcb)==false)
+
+											 {
+										#if defined(ENABLE_SLEEP_FEATURE)
+												 PHY_DataConf(FAILURE);
+										#endif // #if defined(ENABLE_SLEEP_FEATURE)
+										         --msghandledemo;
+										         printf("\nPrevious Transaction is ongoing\n\r");
+												 //DemoOutput_UnicastFail();
+											 }
+											 else
+											 {
+												 for(ic = 0; ic < MAX_BYTES_MS; ic++) mensaje[ic] = NULL;
+												  send_msj = 0;
+												 // Successful Transmission
+												 TxNum++;
+												 /* Start timer for transmission timeout */
+												// SwTimerStart (TxTimerId, MS_TO_US(5000), 0/*SW_TIMEOUT_RELATIVE*/, (void *)TxToutCallback, NULL);
+											 }
+						             }			
+#else
+							
+								/* Unicast the message to select_ed node */
+								if (MiApp_SendData(LONG_ADDR_LEN, ConnectionTable[select_ed].Address, dataLen, dataPtr, ++msghandledemo, 1, dataConfcb) == false)
+								{
+											/* That bring the node back to continuous transaction cycle */
+#if defined(ENABLE_SLEEP_FEATURE)
+									PHY_DataConf(FAILURE);
+#endif // #if defined(ENABLE_SLEEP_FEATURE)
+#if ! defined(PROTOCOL_STAR)
+									DemoOutput_UnicastFail();
+#endif
+								}
+								else
+								{
+									
+									// Successful Transmission
+									TxNum++;
+									/* Start timer for transmission timeout */
+									//SwTimerStart (TxTimerId, MS_TO_US(5000), 0/*SW_TIMEOUT_RELATIVE*/, (void *)TxToutCallback, NULL);
+								}
+								
+								// Update the display/console
+								DemoOutput_UpdateTxRx(TxNum, RxNum);
+								DemoOutput_Instruction();
+								
+#endif
+								
+							
+							/* While waiting in TX , RX will process if any message was available */
+							P2PTasks ();
+							SYSTEM_RunTasks();
+						} // while(chk_sel_status), end of Peer Device selection
+					} // while(update_ed == true), end of Display
+			}
+		}
+			
+		
+			
 		uint8_t PressedButton = ButtonPressed();
 #if defined(PROTOCOL_STAR)
 		if ( PressedButton == 1 || PressedButton == 2)
@@ -288,6 +498,7 @@ void run_star_demo(void)
 			{
 #endif
 #if defined(PROTOCOL_STAR)
+
 			if (role == PAN_COORD)
 			{
 #endif
@@ -599,12 +810,12 @@ void run_star_demo(void)
 		}
 #endif
 	}
-  }
+						}
  #if defined(PROTOCOL_STAR)
 	//P2PTasks ();
 	//SYSTEM_RunTasks();
  #endif
-}
+
 
 void ReceivedDataIndication (RECEIVED_MESSAGE *ind)
 {
@@ -811,3 +1022,15 @@ void p2p_demo_unicast_to_parent(void)
 }
 
 #endif // #if defined(PROTOCOL_P2P)
+
+uint8_t calculate_checksum(const uint8_t *ptrMensaje, const uint16_t tamanio) {
+	uint16_t suma_mensaje = 0;
+	uint8_t i, checksum;
+	
+	for(i = 3; i < (tamanio + 3); i++) {
+		suma_mensaje = suma_mensaje + ptrMensaje[i];
+	}
+	checksum = (uint8_t)suma_mensaje;
+	checksum = 0xFF - checksum;
+	return checksum;
+}

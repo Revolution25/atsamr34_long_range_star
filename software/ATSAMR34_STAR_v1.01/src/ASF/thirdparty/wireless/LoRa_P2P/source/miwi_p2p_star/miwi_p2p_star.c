@@ -580,10 +580,12 @@ void P2PTasks(void)
                     case CMD_P2P_CONNECTION_REQUEST:
                         {
 							/********************************************************************/
+							#define PROTOCOL_STAR
 							//STAR SUPPORT CODE                          
 							#if defined(PROTOCOL_STAR)
 							if(PAN_COORD != role)
 							{
+								printf("esta en mode pan coordinator");
 								/* Ignore If not PANCoordinator -Important for star network */
 								MiMAC_DiscardPacket();
 								break;

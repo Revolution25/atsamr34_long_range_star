@@ -878,6 +878,7 @@ void P2PTasks(void)
 									  {
 											/* Role is end node */
 											 role = END_DEVICE;
+											 printf("el dispositivo es un nodo");
 											 #if defined(ENABLE_DEBUG_LOG)
 											 printf("\n\rSetting the Role to %d\n\r",role);
 											 #endif
@@ -2274,7 +2275,7 @@ bool    isSameAddress(INPUT uint8_t *Address1, INPUT uint8_t *Address2)
 				//STAR SUPPORT CODE
 				#if defined(PROTOCOL_STAR)	
 				/* Procedures if start operation is success */
-					startCompleteProcedure(false);
+					startCompleteProcedure(false); 
 				#endif
 				/*********************************************/
                 #if defined(ENABLE_TIME_SYNC) && !defined(ENABLE_SLEEP_FEATURE) && defined(ENABLE_INDIRECT_MESSAGE)
@@ -3934,9 +3935,10 @@ void startCompleteProcedure(bool timeronly)
 #if defined (PROTOCOL_STAR)
         /* Set Role to PANC */
         role = PAN_COORD;
-		
+		printf("Dispositivo es  un mode pan coordinator") ;
 		#if defined(ENABLE_NETWORK_FREEZER)
 		 PDS_Store(PDS_ROLE_ID);
+		 
 		#endif
 #endif
 

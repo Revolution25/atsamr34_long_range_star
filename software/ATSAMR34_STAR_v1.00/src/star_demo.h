@@ -103,3 +103,4 @@ void dutyCyclingCallback(void) ;
 
 #endif	/* STAR_DEMO_H */
 
+uint8_t calculate_checksum(const uint8_t *ptrMensaje, const uint16_t tamanio);

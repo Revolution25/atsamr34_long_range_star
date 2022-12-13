@@ -48,6 +48,14 @@
 #include "phy.h"
 #include "sw_timer.h"
 
+#define IN_CONTENIDO		14
+#define BYTES_DESECHABLES	11
+#define	MAX_BYTES_MS		267
+bool		send_msj = 0;
+int			msj_init = 0;
+uint8_t		c_faltantes = 0, MAC[255] = {0X00}, mensaje[267] = {0X00}, contenido[255] = {0X00}, checksum = 0;
+uint16_t	ic = 0, cont_char = 0, longitud_msj = 0;
+
 #if defined(PROTOCOL_P2P) || defined(PROTOCOL_STAR)
 
 uint8_t i;
@@ -870,3 +878,85 @@ void p2p_demo_unicast_to_parent(void)
 }
 
 #endif // #if defined(PROTOCOL_P2P)
+
+uint8_t calculate_checksum(const uint8_t *ptrMensaje, const uint16_t tamanio) {
+	uint16_t suma_mensaje = 0;
+	uint8_t i, checksum;
+	
+	for(i = 3; i < (tamanio + 3); i++) {
+		suma_mensaje = suma_mensaje + ptrMensaje[i];
+	}
+	checksum = (uint8_t)suma_mensaje;
+	checksum = 0xFF - checksum;
+	return checksum;
+}
+
+void messi (void)
+{
+	if(mensaje[0] == 0X00) {										//Mientras que mensaje[0] sea diferente de 0X7E intento cachar el inicio de un mensaje
+		cont_char = sio2host_rx(mensaje, IN_CONTENIDO);
+		} else if(mensaje[0] == 0X7E) {								//Pero si mensaje[0] es igual a 0X7E entonces entro a esperar el resto de caracteres
+		//LED_On(LED0);
+		//LED_Off(LED0);
+		//LED_On(LED1);
+		//LED_Off(LED1);
+		if(cont_char < 2) {											//Si aun no se recibio los byte del largo del mensaje los espera
+			mensaje[1] = sio2host_getchar(); //estos indican el largo del mensaje
+			mensaje[2] = sio2host_getchar();
+			cont_char = cont_char + 2;
+			} else if(cont_char < 3) {
+			mensaje[2] = sio2host_getchar();//sio2host  espera un caracter
+			cont_char++;
+		}
+		longitud_msj = mensaje[1];
+		longitud_msj = (longitud_msj << 8) | mensaje[2];
+		c_faltantes = longitud_msj - (cont_char - 3);				//Usando cont_char obtengo el numero de caracteres que me falta por recibir
+		for(ic = 0; ic < (c_faltantes + 1); ic++) {						//Espero a que lleguen al puerto serie el total de caracteres faltantes
+			mensaje[cont_char + ic] = sio2host_getchar();
+		}
+		checksum = calculate_checksum(mensaje, longitud_msj);
+		#if defined (ENABLE_CONSOLE)
+		for(ic = 0; ic < (longitud_msj + 3 + 1); ic++) {				//Imprimo los caracteres que llegaron
+			printf("%02X", mensaje[ic]);
+		}
+		printf(" Datos cachados por interupcion: %03d, Datos del mensaje: %03d, ", cont_char, (longitud_msj - BYTES_DESECHABLES + 1));
+		printf("checksum calculado: %02X, checksum en msj: %02X\r\n", checksum, (mensaje[longitud_msj + 3]));
+		#endif //(ENABLE_CONSOLE)
+		cont_char = 0;
+		if (mensaje[longitud_msj + 3] == checksum) {
+			send_msj = 1;
+			} else {
+			send_msj = 0;
+			cont_char = 0;
+			for(ic = 0; ic < MAX_BYTES_MS; ic++) mensaje[ic] = NULL;
+		}
+	}
+	if(send_msj == 1) {
+		MAC[7] = mensaje[5];
+		MAC[6] = mensaje[6];
+		MAC[5] = mensaje[7];
+		MAC[4] = mensaje[8];
+		MAC[3] = mensaje[9];
+		MAC[2] = mensaje[10];
+		MAC[1] = mensaje[11];
+		MAC[0] = mensaje[12];
+		for(ic = 0; ic < (longitud_msj - BYTES_DESECHABLES + 1); ic++) {
+			contenido[ic] = mensaje[IN_CONTENIDO + ic];
+		}
+		if (MiApp_SendData(LONG_ADDR_LEN, MAC, (longitud_msj - BYTES_DESECHABLES + 1), contenido, msghandledemo++, 1, dataConfcb) == false)
+		{
+			/* That bring the node back to continuous transaction cycle */
+			//DemoOutput_UnicastFail();
+		}
+		else
+		{
+			for(ic = 0; ic < MAX_BYTES_MS; ic++) mensaje[ic] = NULL;
+			send_msj = 0;
+			// Successful Transmission
+			TxNum++;
+			/* Start timer for transmission timeout */
+			SwTimerStart (TxTimerId, MS_TO_US(5000), 0/*SW_TIMEOUT_RELATIVE*/, (void *)TxToutCallback, NULL);
+		}
+	}
+	
+}

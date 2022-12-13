@@ -35,6 +35,7 @@
 #include "task.h"
 #include "asf.h"
 #include "sio2host.h"
+#include "star_demo.h"
 
 #if defined(ENABLE_NETWORK_FREEZER)
 #include "pdsDataServer.h"
@@ -104,6 +105,7 @@ int main ( void )
     {
 		SYSTEM_RunTasks();
 		Run_Demo();
+	    messi();
     }
 }
 

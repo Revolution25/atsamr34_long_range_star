@@ -177,10 +177,10 @@ void DemoOutput_HandleMessage(void)
 #if defined(PROTOCOL_STAR)
 	/* If the role is not PAN Coordinator and receiving a unicast
 	then first three bytes are source end device info, so skip this*/
-	if (END_DEVICE == role && !rxMessage.flags.bits.broadcast)
-	{
-	    startPayloadIndex = 3;
-	}
+	//if (END_DEVICE == role && !rxMessage.flags.bits.broadcast)
+	//{
+	    //startPayloadIndex = 3;
+	//}
 #endif
 
     for(i = startPayloadIndex; i < rxMessage.PayloadSize; i++)

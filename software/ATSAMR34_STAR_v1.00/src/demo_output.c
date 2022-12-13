@@ -127,11 +127,10 @@ void DemoOutput_Channel(uint8_t channel, uint8_t Step)
 
 void DemoOutput_Instruction(void)
 {
-#if defined (ENABLE_LCD)
+#if defined (ENABLE_CONSOLE)
 	#if defined (EXT_BOARD_OLED1_XPLAINED_PRO)
-		LCDDisplay((char *)"SW     : Broadcast \nBUTTON1: Unicast", 0, false);
-	#else
-		LCDDisplay((char *)"SW: Broadcast", 0, false);
+		printf("Unicast");
+
 	#endif
 #endif
 }
@@ -139,6 +138,7 @@ void DemoOutput_Instruction(void)
 
 void DemoOutput_HandleMessage(void)
 {
+	uint16_t leng = 0;
     uint8_t i;
 	uint8_t startPayloadIndex = 0;
 	
@@ -161,14 +161,14 @@ void DemoOutput_HandleMessage(void)
         sio2host_tx((uint8_t *)" from ", sizeof(" from "));
         if( rxMessage.flags.bits.altSrcAddr )
         {
-            printf( "%x", rxMessage.SourceAddress[1]);
-            printf( "%x", rxMessage.SourceAddress[0]);
+            printf( "%02X", rxMessage.SourceAddress[1]);
+            printf( "%02X", rxMessage.SourceAddress[0]);
         }
         else
         {    
             for(i = 0; i < MY_ADDRESS_LENGTH; i++)
             {
-                printf("%x", rxMessage.SourceAddress[MY_ADDRESS_LENGTH-1-i]);
+                printf("%02X", rxMessage.SourceAddress[MY_ADDRESS_LENGTH-1-i]);
             }    
         }
     }
@@ -183,9 +183,9 @@ void DemoOutput_HandleMessage(void)
 	}
 #endif
 
-    for(i = startPayloadIndex; i < rxMessage.PayloadSize; i++)
+    for(i =0; i < rxMessage.PayloadSize; i++)
     {
-        sio2host_putchar(rxMessage.Payload[i]);
+       printf("%02X", rxMessage.Payload[i]);
     }   
 	printf("\r\n");    
 } 
